@@ -1,24 +1,36 @@
+use std::collections::HashMap;
 use std::fs::{File, self};
 use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::fmt::Display;
 
 pub struct Graph <T>{
-    nodes: Vec<GraphNode<T>>
+    nodes: HashMap<String, GraphNode<T>>
+}
+
+struct GraphNode<T>{
+    data: T,
+    links: Vec<String>
+}
+
+impl<T> GraphNode<T> {
+    fn new(data: T) -> Self { Self { data, links: Vec::new() } }
 }
 
 impl<T> Graph<T> {
     pub fn new(node_count: usize) -> Self { 
-        Self { nodes:  Vec::<GraphNode<T>>::with_capacity(node_count)} 
+        Self { nodes : HashMap::new() } 
     }
 
-    pub fn add_node(&mut self, data: T) -> usize {
-        self.nodes.push(GraphNode::<T>::new(data));
-        self.nodes.len()
+    pub fn add_node(&mut self, node_id: String, node_data: T){
+        self.nodes.insert(node_id.to_string(), GraphNode::new(node_data));
     }
 
-    pub fn add_link(&mut self, from: usize, to: usize) {
-        self.nodes[from-1].links.push(to-1);
+    pub fn add_link(&mut self, from: String, to: String) {
+        match self.nodes.get_mut(&from.to_string()) {
+            None =>{},
+            Some(node) => node.links.push(to.to_string())
+        }
     }
 }
 
@@ -32,18 +44,16 @@ impl<T: Display> Graph<T> {
             Ok(file) => file,
         };
 
-        write!(file, "{}\n", &self.nodes.len().to_string());
-
-        for (ind, node) in self.nodes.iter().enumerate(){
+        for (id, node) in &self.nodes{
             let node_data = node.data.to_string();
-            write!(file, "{ind} {node_data}\n");
+            write!(file, "{id} {node_data}\n");
         }
         
         file.write(b"#\n");
 
-        for (ind, node) in self.nodes.iter().enumerate(){
+        for (id, node) in &self.nodes{
             for link in &node.links{
-                write!(file, "{ind} {link}\n");
+                write!(file, "{id} {link}\n");
             }
         }
     }
@@ -71,30 +81,21 @@ impl<T: Display> Graph<T> {
         // reader.read_until(b" ", &mut buf);
         // graph.add_node(buf);
 
-        for line in reader.lines() {
-            if let Ok(node_str) = line {
-                let mut _nodeInf: Vec<&str> = node_str.split(" ").collect();
-                let data = _nodeInf[0].to_string();
-                let node_id = graph.add_node(data);
+        // for line in reader.lines() {
+        //     if let Ok(node_str) = line {
+        //         let mut _nodeInf: Vec<&str> = node_str.split(" ").collect();
+        //         let data = _nodeInf[0].to_string();
+        //         let node_id = graph.add_node(data);
                 
-                if _nodeInf.len() < 2 {continue;}
+        //         if _nodeInf.len() < 2 {continue;}
 
-                let links = &_nodeInf[1..].to_vec();
-                for n in 1.._nodeInf.len() {
-                    graph.add_link(node_id, _nodeInf[n].parse::<usize>().unwrap());
-                }
-            }
-        }
+        //         let links = &_nodeInf[1..].to_vec();
+        //         for n in 1.._nodeInf.len() {
+        //             graph.add_link(node_id, _nodeInf[n].parse::<usize>().unwrap());
+        //         }
+        //     }
+        // }
     }
 
 
-}
-
-struct GraphNode<T>{
-    data: T,
-    links: Vec<usize>
-}
-
-impl<T> GraphNode<T> {
-    fn new(data: T) -> Self { Self { data, links: Vec::new() } }
 }
