@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque, HashSet};
 use std::fs::{File, self};
 use std::io::{self, BufRead, Write};
 use std::path::Path;
@@ -32,6 +32,44 @@ impl<T: Display> Graph<T> {
             None =>{},
             Some(node) => node.links.push(to.to_string())
         }
+    }
+
+    pub fn bfs(&self, start_node_id: &str, goal_node_id: &str) -> Option<Vec<String>>{
+        let mut queue = VecDeque::<String>::new();
+        let mut visited = HashSet::<String>::new();
+        queue.push_back(start_node_id.to_string());
+        visited.insert(start_node_id.to_string());
+        let mut paths = HashMap::<String, String>::new();
+
+        while !queue.is_empty() {
+            let node_id = queue.pop_front().unwrap();
+            
+            if node_id == goal_node_id {
+                let mut path = Vec::<String>::new();
+                let mut curr_node = goal_node_id;
+                
+                while curr_node != start_node_id {
+                    path.push(curr_node.to_string());
+                    curr_node = paths.get(curr_node).unwrap();
+                }
+
+                path.push(start_node_id.to_string());
+                path.reverse();
+                return Some(path);
+            }
+            
+            let links = &self.nodes.get(&node_id).expect("check BFS").links;
+            
+            for child in links{
+                if !visited.contains(child) {
+                    queue.push_back(child.to_string());
+                    visited.insert(child.to_string());
+                    paths.insert(child.to_string(), node_id.to_string());
+                }
+            }
+        }
+
+        None
     }
 
     pub fn serialize(&self, filename: &str){
