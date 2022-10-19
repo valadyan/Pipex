@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque, HashSet};
 use std::fs::{File, self};
 use std::io::{self, BufRead, Write};
@@ -27,10 +28,32 @@ impl<T: Display> Graph<T> {
         self.nodes.insert(node_id.to_string(), GraphNode::new(node_data));
     }
 
-    pub fn add_link(&mut self, from: &str, to: &str) {
-        match self.nodes.get_mut(&from.to_string()) {
+    pub fn rm_node(&mut self, rm_node_id: &str){
+        self.nodes.remove(rm_node_id);
+
+        for node in self.nodes.values_mut(){ 
+            Self::remove_link(node, rm_node_id);
+        }
+    }
+
+    pub fn add_link(&mut self, from: &str, to: &str){
+        match self.nodes.get_mut(from){
             None =>{},
             Some(node) => node.links.push(to.to_string())
+        }
+    }
+
+    pub fn rm_link(&mut self, from: &str, to: &str) -> Option<String>{
+        match self.nodes.get_mut(from){
+            None => None,
+            Some(node) => Self::remove_link(node, to)
+        }
+    }
+
+    fn remove_link(from: &mut GraphNode<T>, to: &str) -> Option<String>{
+        match from.links.iter().position(|link|  *link == to){
+            None => None,
+            Some(rm_pos) => Some(from.links.swap_remove(rm_pos))
         }
     }
 
